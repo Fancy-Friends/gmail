@@ -1,0 +1,16 @@
+{
+  "$comment": "Message, read from Google's discovery document: id, threadId, labelIds. Gmail returns the stored message rather than an envelope, so the response is the object itself.",
+  "operation": "message_send",
+
+  "values": {
+    "$comment": "Drawn once. A message sent into a NEW conversation has id === threadId -- Gmail starts the thread with the message that opened it -- and two independent draws would produce a shape Gmail never sends for a first send.",
+    "id": { "$fake": "hex", "length": 16 }
+  },
+
+  "response": {
+    "id": { "$ref": "id" },
+    "threadId": { "$ref": "id" },
+    "labelIds": ["SENT"],
+    "$labelComment": "SENT only. A faker that also claimed INBOX would describe a message to yourself, which is the one case where Gmail adds it -- and an author branching on labels would build against the exception rather than the rule."
+  }
+}

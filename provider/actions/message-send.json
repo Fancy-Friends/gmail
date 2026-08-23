@@ -1,0 +1,78 @@
+{
+  "$comment": "Read from Google's own discovery document: users.messages.send -> POST gmail/v1/users/{userId}/messages/send, request Message, response Message.",
+  "operation": "message_send",
+  "kind": "message",
+  "title": "Gmail message",
+  "description": "Send an email from a connected Gmail account.",
+  "summary": "send an email",
+  "docs": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send",
+  "sideEffects": "unsafe-to-replay",
+
+  "$idempotencyComment": "Gmail offers no idempotency key on messages.send -- the discovery document has neither a header nor a parameter for one. So this is honestly unsafe-to-replay with no way to make it safe: a retried durable run sends a SECOND email, to a real person, which is the least recallable side effect in the estate so far.",
+
+  "request": {
+    "method": "POST",
+    "path": "/gmail/v1/users/{userId}/messages/send",
+    "encoding": "json",
+    "compose": {
+      "as": "raw",
+      "format": "rfc2822",
+      "encoding": "base64url",
+      "$comment": "Gmail's Message.raw, quoted from the discovery document: 'The entire email message in an RFC 2822 formatted and base64url encoded string.' Not to/subject/body -- ONE opaque string containing a whole email. Nobody hand-writes RFC 2822, so the composition happens in the generated code and the parity suite proves all three runtimes produce the same bytes."
+    }
+  },
+
+  "config": [
+    {
+      "type": "text",
+      "key": "userId",
+      "label": "Send as",
+      "required": true,
+      "default": "me",
+      "description": "Whose mailbox to send from. `me` is the connected account and is almost always what you want.",
+      "send": { "in": "path", "as": "userId", "value": "string" },
+      "$comment": "In the PATH. `me` is a literal Gmail understands, which is why it is the default rather than an address -- an address here has to be one the connected account is allowed to send as, and getting that wrong is a 403 that reads like an auth problem."
+    },
+    {
+      "type": "text",
+      "key": "to",
+      "label": "To",
+      "required": true,
+      "description": "Recipient address. Several can be given, comma separated, exactly as an email client accepts them.",
+      "send": { "in": "message", "as": "To", "value": "string" }
+    },
+    {
+      "type": "text",
+      "key": "cc",
+      "label": "Cc",
+      "description": "Copied recipients, comma separated. Left empty the header is omitted entirely rather than sent blank.",
+      "send": { "in": "message", "as": "Cc", "value": "string" }
+    },
+    {
+      "type": "text",
+      "key": "subject",
+      "label": "Subject",
+      "required": true,
+      "send": { "in": "message", "as": "Subject", "value": "string" }
+    },
+    {
+      "type": "textarea",
+      "key": "body",
+      "label": "Message",
+      "required": true,
+      "description": "The plain-text body. It is sent as text/plain; UTF-8, so accented characters and emoji survive.",
+      "send": { "in": "message-body", "value": "string" }
+    }
+  ],
+
+  "outputShape": [
+    { "path": "data.id", "type": "string", "description": "Gmail's id for the sent message." },
+    { "path": "data.threadId", "type": "string", "description": "The thread it landed in. Gmail groups by subject and references, so a reply to an existing conversation shares this." },
+    { "path": "data.labelIds", "type": "array", "description": "Labels Gmail applied, typically SENT." }
+  ],
+
+  "contract": {
+    "sends": ["userId", "raw"],
+    "reads": ["id", "threadId", "labelIds"]
+  }
+}

@@ -40,9 +40,14 @@ final class MessageSend
      * later as an "invalid request" from Gmail.
      *
      * @param array<string,mixed> $config
-     * @return array<string,scalar>
+     * An EMPTY body is `{}`, not `[]` — and PHP cannot tell those apart, because
+     * both are `array()` and `json_encode` picks the list. So an empty one is
+     * returned as an object. TypeScript and Python have no such ambiguity, which
+     * is why this is a difference only the byte-parity suite can see.
+     *
+     * @return array<string,mixed>|\stdClass
      */
-    public static function body(array $config): array
+    public static function body(array $config): array|\stdClass
     {
         if (($config['userId'] ?? null) === null || ($config['userId'] ?? null) === '') {
             throw new ConnectorConfigException('message_send: "userId" is required (Send as).');
@@ -64,6 +69,7 @@ final class MessageSend
 
         $body['raw'] = self::composeMessage($config);
 
+        $body = $body === [] ? new \stdClass() : $body;
         return $body;
     }
 

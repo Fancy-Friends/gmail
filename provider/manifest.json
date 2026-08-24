@@ -22,6 +22,8 @@
     "scopes": ["https://www.googleapis.com/auth/gmail.send"],
     "accessTokenCredential": "accessToken",
     "refreshTokenCredential": "refreshToken",
+    "$refreshTokenRotates": "Reusable. A refresh response carries access_token, expires_in, scope and token_type — no refresh_token — and Google’s own expiry rule is \"the refresh token has not been used for six months\", which is a statement about a token that is PERSISTED AND REPLAYED. Under rotation it would change hourly and that rule could never fire.",
+    "refreshTokenRotates": false,
     "accessTokenTtlSeconds": 3600,
     "$scopeComment": "gmail.send, which is the NARROWEST scope that can send. The discovery document lists https://mail.google.com/ first for this method -- full read, write and delete over the entire mailbox -- and taking the first entry would grant an automation the ability to delete somebody's mail in order to send one message. gmail.send cannot read a single message.",
     "$comment": "The package DECLARES the dance and does not perform it. Google's access tokens last ONE HOUR, so refreshToken is required rather than optional -- and Google only issues one when the consent request asked for offline access."

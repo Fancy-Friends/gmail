@@ -23,7 +23,7 @@
  * only way to develop against it without delivering mail.
  */
 
-import type { ConnectorMeta } from "@particle-academy/fancy-flow/connectors";
+import type { ConnectorDomain, ConnectorMeta } from "@particle-academy/fancy-flow/connectors";
 
 /**
  * The connector API version this package was GENERATED against.
@@ -40,6 +40,34 @@ export const GMAIL_SERVICE = {
   domain: "email",
   sandbox: "none",
 } as const satisfies Pick<ConnectorMeta, "service" | "serviceTitle" | "domain" | "sandbox">;
+
+/**
+ * Every connector domain weaver knows, pinned against fancy-flow's union.
+ *
+ * A closed set copied into three codebases stays correct only while something
+ * MAKES it: this line fails to compile the moment weaver carries a value
+ * fancy-flow does not, including the values no provider uses yet.
+ */
+const WEAVER_DOMAINS: readonly ConnectorDomain[] = [
+  "payments",
+  "commerce",
+  "messaging",
+  "email",
+  "crm",
+  "support",
+  "storage",
+  "calendar",
+  "productivity",
+  "database",
+  "devtools",
+  "analytics",
+  "marketing",
+  "ai",
+  "forms",
+  "hr",
+  "geo"
+];
+void WEAVER_DOMAINS;
 
 /** The credentials a Gmail connection holds. */
 export const GMAIL_CREDENTIALS = [

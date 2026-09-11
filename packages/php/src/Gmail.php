@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ParticleAcademy\Gmail;
 
+use ParticleAcademy\Connectors\FakeValues;
 use ParticleAcademy\Connectors\Mode;
 use ParticleAcademy\Connectors\PreparedRequest;
 use ParticleAcademy\Connectors\SandboxKind;
@@ -60,7 +61,12 @@ final class Gmail
             ],
             requires: self::REQUIRES,
             authorize: self::authorize(...),
-            faker: GmailFaker::respond(...),
+            // The core calls a faker ($operation, $config, $fake, $input); respond()
+            // takes TypeScript's FakeRequest shape. This is the translation.
+            faker: static fn (string $operation, array $config, FakeValues $fake, mixed $input = null): mixed => GmailFaker::respond(
+                $operation,
+                ['config' => $config, 'fake' => $fake, 'input' => $input],
+            ),
         );
     }
 

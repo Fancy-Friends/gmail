@@ -48,7 +48,7 @@ final class GmailFaker
     }
 
     /** @param array<string,mixed> $config */
-    private static function MessageSend(array $config, mixed $fake): array
+    private static function MessageSend(array $config, mixed $fake): array|\stdClass
     {
         $boundId = $fake->hex(16);
 

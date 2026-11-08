@@ -7,6 +7,31 @@ The four packages share one version, because they are generated from one
 `provider/` definition and a version that meant something different in each
 would be a version nobody could reason about.
 
+## [0.5.0] — 2026-11-08
+
+### Added
+
+- **One Google consent grant, shared by every Google connector** (`oauth.grant:
+  "google"`), for an org-level Google connection: one OAuth client, one consent
+  and one refresh token per person, with each feature's scopes asked for when it
+  is first used. Declared in the manifest, the `-ui` package's OAuth constant,
+  the README and the registry index:
+  - `authorizeParams`: `access_type=offline` and `include_granted_scopes=true`.
+    A refresh token comes back only on the FIRST code exchange, so keep the stored
+    one when an exchange returns none.
+  - `revoke`: POST `https://oauth2.googleapis.com/revoke` with `token`, and
+    `scope: "grant"`. **Revoking removes the person's WHOLE Google grant, every
+    Google connector**, so a per-feature disconnect stops using that feature's
+    scopes locally and only a full Google disconnect revokes.
+  - `identity`: identify the account by the id_token's `sub` (request `openid`;
+    issuer `https://accounts.google.com` or `accounts.google.com`; audience is
+    the `clientId`), never by email, which Google says is neither unique nor
+    permanent.
+  `restrictedScopes` is empty: none of this connector's scopes is restricted.
+
+  Nothing a request sends has changed; this is what a host needs to run the
+  connection.
+
 ## [0.4.0] — 2026-11-08
 
 ### Added

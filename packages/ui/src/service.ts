@@ -117,6 +117,13 @@ export const GMAIL_CREDENTIALS = [
  * safely be retried and may run concurrently. That is stated rather than
  * assumed because the opposite — a provider that spends the token and revokes
  * the grant on a replay — looks identical until it happens.
+ *
+ * Its consent grant is SHARED with every connector declaring grant "google":
+ * one OAuth client, one consent and one refresh token per person, scopes added
+ * as features are first used (authorizeParams). Revoking removes the WHOLE
+ * grant, so only a full disconnect revokes; a per-feature disconnect stops
+ * using the scope locally. Identify the account by the id_token's sub, never
+ * by email.
  */
 export const GMAIL_OAUTH = {
   "flow": "authorization_code",
@@ -128,7 +135,28 @@ export const GMAIL_OAUTH = {
   "accessTokenCredential": "accessToken",
   "refreshTokenCredential": "refreshToken",
   "refreshTokenRotates": false,
-  "accessTokenTtlSeconds": 3600
+  "accessTokenTtlSeconds": 3600,
+  "grant": "google",
+  "authorizeParams": {
+    "access_type": "offline",
+    "include_granted_scopes": "true"
+  },
+  "revoke": {
+    "url": "https://oauth2.googleapis.com/revoke",
+    "param": "token",
+    "scope": "grant"
+  },
+  "identity": {
+    "scope": "openid",
+    "claim": "sub",
+    "issuers": [
+      "https://accounts.google.com",
+      "accounts.google.com"
+    ],
+    "jwksUrl": "https://www.googleapis.com/oauth2/v3/certs",
+    "audienceCredential": "clientId"
+  },
+  "restrictedScopes": []
 } as const;
 
 /** Build a Gmail node's connector metadata from the operation it performs. */

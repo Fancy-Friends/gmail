@@ -20,12 +20,12 @@ return [
 
     'credentials' => [
         // OAuth client ID (one per installation).
-        'clientId' => env('GMAIL_CLIENTID'),
+        'clientId' => env('GMAIL_CLIENT_ID', env('GMAIL_CLIENTID')),
         // OAuth client secret (one per installation, secret).
-        'clientSecret' => env('GMAIL_CLIENTSECRET'),
+        'clientSecret' => env('GMAIL_CLIENT_SECRET', env('GMAIL_CLIENTSECRET')),
         // Access token (per connected account, secret).
-        'accessToken' => env('GMAIL_ACCESSTOKEN'),
+        'accessToken' => env('GMAIL_ACCESS_TOKEN', env('GMAIL_ACCESSTOKEN')),
         // Refresh token (per connected account, secret).
-        'refreshToken' => env('GMAIL_REFRESHTOKEN'),
+        'refreshToken' => env('GMAIL_REFRESH_TOKEN', env('GMAIL_REFRESHTOKEN')),
     ],
 ];

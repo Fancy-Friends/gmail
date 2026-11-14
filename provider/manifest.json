@@ -52,6 +52,49 @@
 
   "encoding": "json",
 
+  "summary": "Send Gmail messages from a workflow or a Laravel app, as the connected Google account.",
+  "$setupComment": "Steps read from Google's docs on 2026-11-14 (each cites its page). Every Google connector shares one grant, so the first four steps are the same for all of them; do them once.",
+  "setup": [
+    {
+      "title": "Create (or reuse) the Google Cloud project for {{appName}}",
+      "detail": "Every Google connector shares ONE consent grant (oauth.grant \"google\"), so use one project and one OAuth client for all of them: one consent and one refresh token per person.",
+      "url": "https://developers.google.com/workspace/guides/create-project"
+    },
+    {
+      "title": "Enable the Gmail API",
+      "detail": "Console: APIs & Services, Library; open the Gmail API and click Enable.",
+      "url": "https://developers.google.com/workspace/guides/enable-apis"
+    },
+    {
+      "title": "Configure the consent screen",
+      "detail": "Console: Google Auth platform, Branding (app name {{appName}}, support email, contact email), then Audience: Internal for people inside your Google Workspace organisation only, or External (while it is in testing, add each tester under Test users). Then Data Access, Add or Remove Scopes, and add `https://www.googleapis.com/auth/gmail.send` beside the scopes of any other Google connector you use. You cannot remove the consent screen once it is configured.",
+      "url": "https://developers.google.com/workspace/guides/configure-oauth-consent"
+    },
+    {
+      "title": "Create a Web application OAuth client",
+      "detail": "Console: Google Auth platform, Clients, Create Client; type Web application. Under Authorized redirect URIs click Add URI and paste {{oauthRedirectUrl}}, then Create. Copy the client ID and client secret when the client is created.",
+      "url": "https://developers.google.com/workspace/guides/create-credentials",
+      "copy": [
+        {
+          "label": "Authorized redirect URI",
+          "value": "{{oauthRedirectUrl}}"
+        }
+      ],
+      "fields": [
+        "clientId",
+        "clientSecret"
+      ]
+    },
+    {
+      "title": "Connect an account and check it works",
+      "detail": "Connect one Google account through {{appName}}'s OAuth flow, then run the check below.",
+      "url": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send",
+      "actor": "agent",
+      "prompt": "Using {{appName}}'s {{connector}} connection, send one message with message_send to the connected account's OWN address, subject \"{{appName}} setup check\", and report the returned message id.",
+      "done": "message_send returns an id and the message arrives in the account's own inbox."
+    }
+  ],
+
   "credentialFields": [
     {
       "key": "clientId",

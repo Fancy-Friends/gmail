@@ -72,6 +72,13 @@ export const gmailMessageKind: NodeKindDefinition = defineConnectorKind(GMAIL_ME
     },
     {
       "type": "text",
+      "key": "from",
+      "label": "From",
+      "placeholder": "Zoë Example <zoe@example.com>",
+      "description": "Optional. Send as one of the account's Gmail send-as aliases: \"Name <alias@example.com>\" or just the address. Empty sends as the account itself, exactly as before. Gmail REWRITES a From that is not a verified send-as alias to the account's own address, and the gmail.send scope cannot see the alias list, so a rewrite cannot be detected here: check the sent message if it matters."
+    },
+    {
+      "type": "text",
       "key": "to",
       "label": "To",
       "required": true,

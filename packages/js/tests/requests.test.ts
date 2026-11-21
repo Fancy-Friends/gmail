@@ -50,6 +50,7 @@ test("message_send sends POST /gmail/v1/users/{userId}/messages/send", async () 
   await gmailMessageSend({
     config: {
       "userId": "example-userId",
+      "from": "Zoë Example <zoe@example.com>",
       "to": "example-to",
       "cc": "example-cc",
       "subject": "example-subject",
@@ -65,7 +66,7 @@ test("message_send sends POST /gmail/v1/users/{userId}/messages/send", async () 
   assert.ok(new URL(seen[0]!.url).pathname.endsWith("/gmail/v1/users/example-userId/messages/send"), seen[0]!.url);
 
   assert.deepEqual(JSON.parse(String(seen[0]!.body ?? "{}")), {
-    "raw": "VG86IGV4YW1wbGUtdG8NCkNjOiBleGFtcGxlLWNjDQpTdWJqZWN0OiBleGFtcGxlLXN1YmplY3QNCg0KZXhhbXBsZS1ib2R5"
+    "raw": "RnJvbTogPT9VVEYtOD9CP1dtL0RxeUJGZUdGdGNHeGw_PSA8em9lQGV4YW1wbGUuY29tPg0KVG86IGV4YW1wbGUtdG8NCkNjOiBleGFtcGxlLWNjDQpTdWJqZWN0OiBleGFtcGxlLXN1YmplY3QNCg0KZXhhbXBsZS1ib2R5"
   });
 });
 
@@ -75,6 +76,7 @@ test("the credential is placed the way the provider wants it", async () => {
   await gmailMessageSend({
     config: {
       "userId": "example-userId",
+      "from": "Zoë Example <zoe@example.com>",
       "to": "example-to",
       "cc": "example-cc",
       "subject": "example-subject",
@@ -97,6 +99,7 @@ test("a missing required field is refused BEFORE anything is sent", async () => 
   await assert.rejects(
     gmailMessageSend({
       config: {
+        "from": "Zoë Example <zoe@example.com>",
         "to": "example-to",
         "cc": "example-cc",
         "subject": "example-subject",

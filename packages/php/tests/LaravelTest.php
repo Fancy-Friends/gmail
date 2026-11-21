@@ -29,6 +29,7 @@ it('fakes message_send and records it for assertSent', function () {
     Gmail::fake();
     $config = [
         'userId' => 'example-userId',
+        'from' => 'Zoë Example <zoe@example.com>',
         'to' => 'example-to',
         'cc' => 'example-cc',
         'subject' => 'example-subject',

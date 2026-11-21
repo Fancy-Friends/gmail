@@ -7,6 +7,32 @@ The four packages share one version, because they are generated from one
 `provider/` definition and a version that meant something different in each
 would be a version nobody could reason about.
 
+## [0.6.0] — 2026-11-21
+
+### Added
+
+- **`message_send` takes an optional `from`, to send as a Gmail send-as
+  alias.** The value is `"Name <alias@example.com>"` or just the address.
+  - **Empty or absent sends exactly as before:** the message's bytes do not
+    change.
+  - **A non-ASCII display name is RFC 2047-encoded** (`=?UTF-8?B?…?=`). It
+    splits into words of at most 75 characters, never inside a character.
+  - **An ASCII name with a special is quoted:** `Doe, Jane` would otherwise
+    be two mailboxes.
+  - **The address is sent as written.** A value with no address is refused
+    by name.
+  - **A newline is REFUSED, not stripped**, as for every header: it would
+    inject another one.
+- **Gmail rewrites a From that is not a verified send-as alias** to the
+  account's own address. The `gmail.send` scope cannot list aliases, so the
+  rewrite cannot be detected here. Check the sent message if it matters.
+- **Not yet verified live.** moic runs three live sends once this is
+  installed.
+- **New vocabulary: `send.encoding: "mailbox"`,** for a message header
+  holding one mailbox. It is refused anywhere else. `scripts/lib/compose.mjs`
+  is the reference, and php and python are held to it on long, quoted and
+  bare cases.
+
 ## [0.5.2] — 2026-11-14
 
 ### Added

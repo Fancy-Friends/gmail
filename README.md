@@ -93,6 +93,7 @@ Send an email from a connected Gmail account.
 | Input | Required | What it is |
 |---|---|---|
 | `userId` | yes | Whose mailbox to send from. `me` is the connected account and is almost always what you want. |
+| `from` | no | Optional. Send as one of the account's Gmail send-as aliases: "Name <alias@example.com>" or just the address. Empty sends as the account itself, exactly as before. Gmail REWRITES a From that is not a verified send-as alias to the account's own address, and the gmail.send scope cannot see the alias list, so a rewrite cannot be detected here: check the sent message if it matters. |
 | `to` | yes | Recipient address. Several can be given, comma separated, exactly as an email client accepts them. |
 | `cc` | no | Copied recipients, comma separated. Left empty the header is omitted entirely rather than sent blank. |
 | `subject` | yes | Subject |

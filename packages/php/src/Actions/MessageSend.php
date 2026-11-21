@@ -103,6 +103,7 @@ final class MessageSend
         $lines = [];
 
         foreach ([
+            ['From', $config['from'] ?? null],
             ['To', $config['to'] ?? null],
             ['Cc', $config['cc'] ?? null],
             ['Subject', $config['subject'] ?? null],
@@ -122,7 +123,7 @@ final class MessageSend
                 );
             }
 
-            $lines[] = $name.': '.$text;
+            $lines[] = $name.': '.(in_array($name, ['From'], true) ? self::encodeMailbox($text, $name) : $text);
         }
 
         // The body's own newlines are normalised to CRLF too: a bare LF inside a
@@ -136,5 +137,48 @@ final class MessageSend
         $message = implode("\r\n", $lines)."\r\n\r\n".$body;
 
         return rtrim(strtr(base64_encode($message), '+/', '-_'), '=');
+    }
+
+    /** One RFC 5322 mailbox for a header: see weaver's scripts/lib/compose.mjs, its reference. */
+    private static function encodeMailbox(string $value, string $header): string
+    {
+        $v = trim($value, " \t");
+        $lt = strrpos($v, '<');
+        $gt = strrpos($v, '>');
+        $bracketed = $lt !== false && $gt !== false && $gt > $lt;
+        $address = trim($bracketed ? substr($v, $lt + 1, $gt - $lt - 1) : $v, " \t");
+        $name = $bracketed ? rtrim(substr($v, 0, $lt), " \t") : '';
+
+        if (! str_contains($address, '@') || strpbrk($address, " \t") !== false) {
+            throw new ConnectorConfigException(
+                $header.' needs an email address — "Name <you@example.com>" or "you@example.com" — got '.json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            );
+        }
+        if (strlen($name) >= 2 && str_starts_with($name, '"') && str_ends_with($name, '"')) {
+            $name = (string) preg_replace('/\\\\(.)/s', '$1', substr($name, 1, -1));
+        }
+        if ($name === '') {
+            return $bracketed ? '<'.$address.'>' : $address;
+        }
+
+        if (preg_match('/[^\x20-\x7e]/', $name) === 1) {
+            $words = [];
+            $chunk = '';
+            foreach (preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
+                if (strlen($chunk.$ch) > 45) {
+                    $words[] = $chunk;
+                    $chunk = '';
+                }
+                $chunk .= $ch;
+            }
+            $words[] = $chunk;
+
+            return implode(' ', array_map(static fn (string $w): string => '=?UTF-8?B?'.base64_encode($w).'?=', $words)).' <'.$address.'>';
+        }
+        if (strpbrk($name, '()<>[]:;@\\,."') !== false) {
+            return '"'.addcslashes($name, '"\\').'" <'.$address.'>';
+        }
+
+        return $name.' <'.$address.'>';
     }
 }

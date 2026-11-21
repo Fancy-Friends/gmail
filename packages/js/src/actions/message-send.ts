@@ -33,7 +33,7 @@ import { GMAIL } from "../service.js";
 export const MESSAGE_SEND_OPERATION = "message_send";
 
 export type MessageSendOptions = {
-  /** The node's resolved config. Keys: userId, to, cc, subject, body. */
+  /** The node's resolved config. Keys: userId, from, to, cc, subject, body. */
   config: Record<string, unknown>;
   credentials?: Record<string, string | undefined>;
   mode?: RequestedMode;
@@ -93,8 +93,11 @@ export async function gmailMessageSend(options: MessageSendOptions): Promise<Con
  */
 function composeMessage(config: Record<string, unknown>): string {
   const lines: string[] = [];
+  // Headers holding one RFC 5322 mailbox, whose display name is encoded.
+  const MAILBOX = new Set<string>(["From"]);
 
   for (const [name, value] of [
+    ["From", config.from],
     ["To", config.to],
     ["Cc", config.cc],
     ["Subject", config.subject],
@@ -113,7 +116,7 @@ function composeMessage(config: Record<string, unknown>): string {
       );
     }
 
-    lines.push(`${name}: ${text}`);
+    lines.push(`${name}: ${MAILBOX.has(name) ? encodeMailbox(text, name) : text}`);
   }
 
   // The body's own newlines are normalised to CRLF too: a bare LF inside a
@@ -132,4 +135,44 @@ function composeMessage(config: Record<string, unknown>): string {
     .join("_")
     .split("=")
     .join("");
+}
+
+/** One RFC 5322 mailbox for a header: see scripts/lib/compose.mjs, its reference. */
+function encodeMailbox(value: string, header: string): string {
+  let a = 0;
+  let b = value.length;
+  while (a < b && (value[a] === " " || value[a] === "\t")) a++;
+  while (b > a && (value[b - 1] === " " || value[b - 1] === "\t")) b--;
+  const v = value.slice(a, b);
+  const lt = v.lastIndexOf("<");
+  const gt = v.lastIndexOf(">");
+  const bracketed = lt !== -1 && gt > lt;
+  const address = (bracketed ? v.slice(lt + 1, gt) : v).replace(/^[ \t]+/, "").replace(/[ \t]+$/, "");
+  let name = bracketed ? v.slice(0, lt).replace(/[ \t]+$/, "") : "";
+
+  if (!address.includes("@") || /[ \t]/.test(address)) {
+    throw new Error(
+      header + ' needs an email address — "Name <you@example.com>" or "you@example.com" — got ' + JSON.stringify(v),
+    );
+  }
+  if (name.length >= 2 && name.startsWith('"') && name.endsWith('"')) {
+    name = name.slice(1, -1).replace(/\\(.)/g, "$1");
+  }
+  if (name === "") return bracketed ? "<" + address + ">" : address;
+
+  if (/[^\x20-\x7e]/.test(name)) {
+    const words: string[] = [];
+    let chunk = "";
+    for (const ch of name) {
+      if (Buffer.byteLength(chunk + ch, "utf8") > 45) {
+        words.push(chunk);
+        chunk = "";
+      }
+      chunk += ch;
+    }
+    words.push(chunk);
+    return words.map((w) => "=?UTF-8?B?" + Buffer.from(w, "utf8").toString("base64") + "?=").join(" ") + " <" + address + ">";
+  }
+  if (/[()<>[\]:;@\\,."]/.test(name)) return '"' + name.replace(/[\\"]/g, (c) => "\\" + c) + '" <' + address + ">";
+  return name + " <" + address + ">";
 }

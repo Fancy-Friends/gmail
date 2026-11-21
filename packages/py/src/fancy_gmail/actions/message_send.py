@@ -19,6 +19,8 @@ estate, and either calls Gmail or calls the faker.
 from __future__ import annotations
 
 import base64
+import json
+import re
 from typing import Any
 from urllib.parse import quote
 
@@ -85,6 +87,7 @@ def compose_message(config: dict[str, Any]) -> str:
     lines: list[str] = []
 
     for name, value in (
+        ("From", config.get("from")),
         ("To", config.get("to")),
         ("Cc", config.get("cc")),
         ("Subject", config.get("subject")),
@@ -102,6 +105,8 @@ def compose_message(config: dict[str, Any]) -> str:
                 f"{name} contains a newline, which would inject another header into the message."
             )
 
+        if name in ("From",):
+            text = _encode_mailbox(text, name)
         lines.append(f"{name}: {text}")
 
     # The body's own newlines are normalised to CRLF too: a bare LF inside a
@@ -114,6 +119,45 @@ def compose_message(config: dict[str, Any]) -> str:
     message = "\r\n".join(lines) + "\r\n\r\n" + body
 
     return base64.urlsafe_b64encode(message.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def _encode_mailbox(value: str, header: str) -> str:
+    """One RFC 5322 mailbox for a header: see weaver's scripts/lib/compose.mjs."""
+    v = value.strip(" \t")
+    lt = v.rfind("<")
+    gt = v.rfind(">")
+    bracketed = lt != -1 and gt > lt
+    address = (v[lt + 1 : gt] if bracketed else v).strip(" \t")
+    name = v[:lt].rstrip(" \t") if bracketed else ""
+
+    if "@" not in address or " " in address or "\t" in address:
+        raise ConnectorConfigError(
+            f'{header} needs an email address — "Name <you@example.com>" or '
+            f'"you@example.com" — got {json.dumps(v, ensure_ascii=False)}'
+        )
+    if len(name) >= 2 and name.startswith('"') and name.endswith('"'):
+        name = re.sub(r"\\(.)", r"\1", name[1:-1], flags=re.DOTALL)
+    if name == "":
+        return f"<{address}>" if bracketed else address
+
+    if re.search(r"[^\x20-\x7e]", name):
+        words: list[str] = []
+        chunk = ""
+        for ch in name:
+            if len((chunk + ch).encode("utf-8")) > 45:
+                words.append(chunk)
+                chunk = ""
+            chunk += ch
+        words.append(chunk)
+        encoded = " ".join(
+            "=?UTF-8?B?" + base64.b64encode(w.encode("utf-8")).decode("ascii") + "?="
+            for w in words
+        )
+        return f"{encoded} <{address}>"
+    if any(c in '()<>[]:;@\\,."' for c in name):
+        escaped = name.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}" <{address}>'
+    return f"{name} <{address}>"
 
 def message_send(
     config: dict[str, Any],

@@ -35,6 +35,15 @@
     },
     {
       "type": "text",
+      "key": "from",
+      "label": "From",
+      "placeholder": "Zoë Example <zoe@example.com>",
+      "description": "Optional. Send as one of the account's Gmail send-as aliases: \"Name <alias@example.com>\" or just the address. Empty sends as the account itself, exactly as before. Gmail REWRITES a From that is not a verified send-as alias to the account's own address, and the gmail.send scope cannot see the alias list, so a rewrite cannot be detected here: check the sent message if it matters.",
+      "send": { "in": "message", "as": "From", "value": "string", "encoding": "mailbox" },
+      "$comment": "gmail 0.6.0 (moic, 2026-11-17). The display name is RFC 2047-encoded when it is not ASCII and quoted when it has a special; CR/LF is refused, never stripped. Ships NOT YET VERIFIED LIVE: moic runs three live sends after it is installed."
+    },
+    {
+      "type": "text",
       "key": "to",
       "label": "To",
       "required": true,
